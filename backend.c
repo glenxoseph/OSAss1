@@ -4,6 +4,32 @@
 #include "a1_lib.h"
 
 #define BUFSIZE   1024
+// int addInts(int a, int b);
+// int multiplyInts(int a, int b);
+// uint16_t factorial (int x);
+// float divideFloats(float a, float b);
+
+int addInts(int a, int b) {
+  return a + b;
+}
+
+int multiplyInts(int a, int b) {
+  return a * b;
+}
+
+uint16_t factorial (int x) {
+  uint16_t result = 1;
+  while (x > 0) {
+    result = result * x;
+    x--;
+  }
+  return result;
+}
+
+float divideFloats(float a, float b) {
+  float c = a / b;
+  return c;
+}
 
 int main(int argc, char * argv[]) {
   int sockfd, clientfd;
@@ -58,7 +84,7 @@ int main(int argc, char * argv[]) {
         send_message(clientfd, error, strlen(error));
       }
       else {
-        int sum = a + b;
+        int sum = addInts(a, b);
         char *sumStr[100];
         sprintf(sumStr, "%d", sum);
         send_message(clientfd, sumStr, strlen(sumStr));
@@ -74,7 +100,7 @@ int main(int argc, char * argv[]) {
         send_message(clientfd, error, strlen(error));
       }
       else {
-        int product = a * b;
+        int product = multiplyInts(a, b);
         char *productStr[100];
         sprintf(productStr, "%d", product);
         send_message(clientfd, productStr, strlen(productStr));
@@ -89,15 +115,12 @@ int main(int argc, char * argv[]) {
       //   send_message(clientfd, error, strlen(error));
       // }
       // else {
-        uint64_t result = 1;
-        while (a > 0) {
-          result = result * a;
-          a--;
-        }
-        char *resultStr[100];
-        sprintf(resultStr, "%d", result);
-        send_message(clientfd, resultStr, strlen(resultStr));
-//      }
+      //        uint64_t result = factorial(a);
+      uint64_t result = factorial(a);
+      char *resultStr[100];
+      sprintf(resultStr, "%d", result);
+      send_message(clientfd, resultStr, strlen(resultStr));
+      //      }
     }
 
     //DIVIDE
@@ -109,12 +132,22 @@ int main(int argc, char * argv[]) {
       }
       else {
         float a = atof(command[1]);
-        float quotient = (float)a / (float)b;
+//        float quotient = (float)a / (float)b;
+        float quotient = divideFloats(a, b);
         char *quotientStr[100];
         sprintf(quotientStr, "%.6f", quotient);
         send_message(clientfd, quotientStr, strlen(quotientStr));
       }
     }
+
+    // FALSE COMMANDS
+    // else {
+    //   char s1[] = "Error: Command ";
+    //   char s2[] = " not found";
+    //   char error[10000] = {0};
+    //   snprintf(error, sizeof(error), "%s%s%s", s1, command[0], s2);
+    //   send_message(clientfd, error, strlen(error));
+    // }
 
     if (byte_count <= 0) {
       break;
