@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "a1_lib.h"
+
 
 #define BUFSIZE   1024
 // int addInts(int a, int b);
@@ -52,14 +54,26 @@ int main(int argc, char * argv[]) {
   fprintf(stderr, "Server listening on: %s", argv[1]);
   fprintf(stderr, ": %s\n", argv[2]);
 
-  while (strcmp(msg, "quit\n")) {
+  while (true) {
 
     char command[4][100];
+
+    command[0][0] = '\0';
+    command[1][0] = '\0';
+    command[2][0] = '\0';
+    command[3][0] = '\0';
+
 
     int j = 0;
     int wordCount = 0;
     memset(msg, 0, sizeof(msg));
     ssize_t byte_count = recv_message(clientfd, msg, BUFSIZE);
+
+    // delete newlines
+    char *tmp = NULL;
+    if ((tmp = strstr(msg, "\n"))) {
+      *tmp = '\0';
+    }
 
     //    printf("Client: %s\n", msg);
 
@@ -80,6 +94,7 @@ int main(int argc, char * argv[]) {
       int a = atoi(command[1]);
       int b = atoi(command[2]);
       if (command[1][0] == '\0' || command[2][0] == '\0' || command[3][0] != '\0') {
+        command[3][0] = '\0';
         char *error = "Error: Command \"add\" takes 2 arguments";
         send_message(clientfd, error, strlen(error));
       }
@@ -88,6 +103,9 @@ int main(int argc, char * argv[]) {
         char *sumStr[100];
         sprintf(sumStr, "%d", sum);
         send_message(clientfd, sumStr, strlen(sumStr));
+        command[0][0] = '\0';
+        command[1][0] = '\0';
+        command[2][0] = '\0';
       }
     }
 
@@ -96,6 +114,7 @@ int main(int argc, char * argv[]) {
       int a = atoi(command[1]);
       int b = atoi(command[2]);
       if (command[1][0] == '\0' || command[2][0] == '\0' || command[3][0] != '\0') {
+        command[3][0] = '\0';
         char *error = "Error: Command \"multiply\" takes 2 arguments";
         send_message(clientfd, error, strlen(error));
       }
@@ -104,50 +123,96 @@ int main(int argc, char * argv[]) {
         char *productStr[100];
         sprintf(productStr, "%d", product);
         send_message(clientfd, productStr, strlen(productStr));
+        command[0][0] = '\0';
+        command[1][0] = '\0';
+        command[2][0] = '\0';
       }
     }
 
     //FACTORIAL
     else if (strcmp(command[0], "factorial") == 0) {
       int a = atoi(command[1]);
-      // if (command[1][0] == '\0' || command[2][0] != '\0') {
-      //   char *error = "Error: Command \"factorial\" takes 1 argument";
-      //   send_message(clientfd, error, strlen(error));
-      // }
-      // else {
-      //        uint64_t result = factorial(a);
-      uint64_t result = factorial(a);
-      char *resultStr[100];
-      sprintf(resultStr, "%d", result);
-      send_message(clientfd, resultStr, strlen(resultStr));
-      //      }
+      if (command[2][0] != '\0') {
+        command[2][0] = '\0';
+        char *error = "Error: Command \"factorial\" takes 1 argument";
+        send_message(clientfd, error, strlen(error));
+      }
+      else {
+        //        uint64_t result = factorial(a);
+        uint64_t result = factorial(a);
+        char *resultStr[100];
+        sprintf(resultStr, "%d", result);
+        send_message(clientfd, resultStr, strlen(resultStr));
+        command[0][0] = '\0';
+        command[1][0] = '\0';
+      }
     }
 
     //DIVIDE
     else if (strcmp(command[0], "divide") == 0) {
-      float b = atof(command[2]);
-      if (b == 0.0) {
-        char *error = "Error: Division by zero";
+      if (command[1][0] == '\0' || command[2][0] == '\0' || command[3][0] != '\0') {
+        command[3][0] = '\0';
+        char *error = "Error: Command \"multiply\" takes 2 arguments";
         send_message(clientfd, error, strlen(error));
       }
       else {
-        float a = atof(command[1]);
-//        float quotient = (float)a / (float)b;
-        float quotient = divideFloats(a, b);
-        char *quotientStr[100];
-        sprintf(quotientStr, "%.6f", quotient);
-        send_message(clientfd, quotientStr, strlen(quotientStr));
+        float b = atof(command[2]);
+        if (b == 0.0) {
+          char *error = "Error: Division by zero";
+          send_message(clientfd, error, strlen(error));
+        }
+        else {
+          float a = atof(command[1]);
+          //        float quotient = (float)a / (float)b;
+          float quotient = divideFloats(a, b);
+          char *quotientStr[100];
+          sprintf(quotientStr, "%.6f", quotient);
+          send_message(clientfd, quotientStr, strlen(quotientStr));
+        }
+        command[0][0] = '\0';
+        command[1][0] = '\0';
+        command[2][0] = '\0';
       }
     }
 
-    // FALSE COMMANDS
-    // else {
-    //   char s1[] = "Error: Command ";
-    //   char s2[] = " not found";
-    //   char error[10000] = {0};
-    //   snprintf(error, sizeof(error), "%s%s%s", s1, command[0], s2);
-    //   send_message(clientfd, error, strlen(error));
-    // }
+    //SLEEP
+    else if (strcmp(command[0], "sleep") == 0) {
+      int a = atoi(command[1]);
+      if (command[1][0] == '\0' || command[2][0] != '\0') {
+        command[2][0] = '\0';
+        char *error = "Error: Command \"sleep\" takes 1 argument";
+        send_message(clientfd, error, strlen(error));
+      }
+      else {
+        char * sleepMsg = "Finished Sleeping";
+        sleep(a);
+        send_message(clientfd, sleepMsg, strlen(sleepMsg));
+        command[0][0] = '\0';
+        command[1][0] = '\0';
+      }
+    }
+
+    //QUIT
+    else if ((strcmp(msg, "quit") == 0) || (strcmp(msg, "shutdown") == 0)) {
+      char * byeMsg = "Bye!";
+      send_message(clientfd, byeMsg, strlen(byeMsg));
+      return(0);
+    }
+
+    //FALSE COMMANDS
+    else {
+      char s1[] = "Error: Command \"";
+      char s2[] = "\" not found";
+      char error[10000] = {0};
+      snprintf(error, sizeof(error), "%s%s%s", s1, command[0], s2);
+      send_message(clientfd, error, strlen(error));
+      command[0][0] = '\0';
+      command[1][0] = '\0';
+      command[2][0] = '\0';
+      command[3][0] = '\0';
+    }
+
+
 
     if (byte_count <= 0) {
       break;
